@@ -1,0 +1,9 @@
+name: test-pinned
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  pinned:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "hello pinned" && uname -a
