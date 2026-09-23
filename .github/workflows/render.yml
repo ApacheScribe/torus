@@ -32,10 +32,22 @@ jobs:
           fi
       - name: Render chunk ${{ matrix.chunk }}
         run: |
-          s=$(( ${{ matrix.chunk }} * 156 ))
-          e=$(( s + 156 ))
+          TOTAL=$(python3 -c "
+import json,os
+p='assets/timeline.json'
+if os.path.exists(p):
+    t=json.load(open(p))
+    print(int(t['duration']*t['fps']))
+else:
+    print(624)
+")
+          CHUNKS=4
+          PER=$(( (TOTAL + CHUNKS - 1) / CHUNKS ))
+          s=$(( ${{ matrix.chunk }} * PER ))
+          e=$(( s + PER ))
           mkdir -p /tmp/tf
           python3 scripts/torus.py $s $e /tmp/tf
+          echo "chunk ${{ matrix.chunk }}: frames $s-$e of TOTAL=$TOTAL"
       - uses: actions/upload-artifact@v4
         with:
           name: frames-${{ matrix.chunk }}
