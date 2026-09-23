@@ -27,6 +27,8 @@ jobs:
         run: |
           if [ -f assets/narr.mp3 ]; then
             python3 scripts/sync.py assets/narr.mp3
+          elif [ -f assets/narr.wav ]; then
+            python3 scripts/sync.py assets/narr.wav
           fi
       - name: Render chunk ${{ matrix.chunk }}
         run: |
@@ -62,8 +64,13 @@ jobs:
         run: |
           set -e
           if [ -f assets/narr.mp3 ]; then
-            python3 scripts/sync.py assets/narr.mp3
-            ffmpeg -y -framerate 24 -i /tmp/frames/f%04d.ppm -i assets/narr.mp3 \
+            NARR=assets/narr.mp3
+          elif [ -f assets/narr.wav ]; then
+            NARR=assets/narr.wav
+          fi
+          if [ -n "$NARR" ]; then
+            python3 scripts/sync.py "$NARR"
+            ffmpeg -y -framerate 24 -i /tmp/frames/f%04d.ppm -i "$NARR" \
               -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 160k \
               -shortest -movflags +faststart y_torus_from_plane.mp4
           else
