@@ -1,0 +1,9 @@
+Narration for "The Torus, from a Flat Plane" — 6 sentences, one per step.
+Paste into xAI TTS, save as assets/narr.mp3, run: sh scripts/render.sh
+
+1. Start in the flat Cartesian plane, and pick a rectangle.
+2. Glue the left edge to the right edge, and the rectangle curls into a cylinder.
+3. Now glue the top edge to the bottom edge, and the cylinder bends around until its two ends meet — a torus.
+4. Watch the grid: it becomes a field of circles — one family looping through the hole, the other wrapping around the tube.
+5. Here is the map: every point u, v in the plane lands on the torus.
+6. So a torus is just a flat plane with opposite edges identified — a circle times a circle.

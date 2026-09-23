@@ -1,0 +1,80 @@
+name: render-torus
+
+on:
+  push:
+    paths-ignore:
+      - '*.mp4'
+      - 'assets/timeline.json'
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chunk: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          pip install --quiet pillow
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+      - name: Sync timeline (if narration present)
+        run: |
+          if [ -f assets/narr.mp3 ]; then
+            python3 scripts/sync.py assets/narr.mp3
+          fi
+      - name: Render chunk ${{ matrix.chunk }}
+        run: |
+          s=$(( ${{ matrix.chunk }} * 156 ))
+          e=$(( s + 156 ))
+          mkdir -p /tmp/tf
+          python3 scripts/torus.py $s $e /tmp/tf
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frames-${{ matrix.chunk }}
+          path: /tmp/tf/
+
+  mux:
+    needs: render
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          pip install --quiet pillow
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/frames
+          merge-multiple: true
+      - name: Sync + mux
+        run: |
+          set -e
+          if [ -f assets/narr.mp3 ]; then
+            python3 scripts/sync.py assets/narr.mp3
+            ffmpeg -y -framerate 24 -i /tmp/frames/f%04d.ppm -i assets/narr.mp3 \
+              -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 160k \
+              -shortest -movflags +faststart y_torus_from_plane.mp4
+          else
+            ffmpeg -y -framerate 24 -i /tmp/frames/f%04d.ppm \
+              -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p \
+              y_torus_from_plane_preview.mp4
+          fi
+      - name: Commit video back to repo
+        run: |
+          git config user.name "render-bot"
+          git config user.email "render-bot@users.noreply.github.com"
+          git add y_torus_from_plane*.mp4 assets/timeline.json 2>/dev/null || true
+          git commit -m "render: $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "nothing to commit"
+          git push
