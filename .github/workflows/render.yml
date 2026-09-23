@@ -75,6 +75,6 @@ jobs:
         run: |
           git config user.name "render-bot"
           git config user.email "render-bot@users.noreply.github.com"
-          git add y_torus_from_plane*.mp4 assets/timeline.json 2>/dev/null || true
+          git add -f y_torus_from_plane*.mp4 assets/timeline.json 2>/dev/null || true
           git commit -m "render: $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "nothing to commit"
           git push
